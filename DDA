@@ -1,0 +1,149 @@
+---- Check of Total Amount to MRC for Orders to Product orders - 869
+
+SELECT COUNT(*) AS 'Number of discrepancies' 
+FROM orders
+JOIN product_orders
+ON orders.OrderId = product_orders.OrderId
+WHERE orders.TotalAmount IS NOT product_orders.MRC
+
+---- Check of Status for Orders to Product orders - 0
+
+SELECT COUNT(*) AS 'Number of discrepancies'
+FROM orders
+JOIN product_orders
+ON orders.OrderId = product_orders.OrderId
+WHERE orders.Status IS NOT product_orders.Status
+
+---- Check of Status for assets to Product orders - 60
+
+SELECT COUNT(*) AS 'Number of discrepancies'
+FROM assets
+JOIN product_orders
+ON assets.OrderProductID = product_orders.OrderProductID
+WHERE assets.Status IS NOT product_orders.Status
+
+---- Check of MRC for assets to Product orders - 922
+
+SELECT COUNT(*) AS 'Number of discrepancies'
+FROM assets
+JOIN product_orders
+ON assets.OrderProductID = product_orders.OrderProductID
+WHERE assets.MRC IS NOT product_orders.MRC
+
+---- Check of Product for assets to Product orders - 511
+
+SELECT COUNT(*) AS 'Number of discrepancies'
+FROM assets
+JOIN product_orders
+ON assets.OrderProductID = product_orders.OrderProductID
+WHERE assets.Product IS NOT product_orders.Product
+
+--------------------                 RECONCILITATION                      -------------------------------------------- 
+
+----- Updating the Status Values for product_orders using Product orders
+
+UPDATE product_orders
+SET MRC = (
+	SELECT TotalAmount
+	FROM orders
+	WHERE product_orders.OrderId = orders.OrderId
+);
+
+------ Check for Accuracy  -  0
+
+SELECT COUNT(*) AS 'Number of discrepancies' 
+FROM orders
+JOIN product_orders
+ON orders.OrderId = product_orders.OrderId
+WHERE orders.TotalAmount IS NOT product_orders.MRC
+
+
+------- Checking for impact on MRC discrepancies for assets using product_orders - 271
+
+SELECT COUNT(*) AS 'Number of discrepancies'
+FROM assets
+JOIN product_orders
+ON assets.OrderProductID = product_orders.OrderProductID
+WHERE assets.MRC IS NOT product_orders.MRC
+
+
+---- Updating the MRC of assets using updated product_orders
+
+UPDATE assets	
+SET MRC = (
+	SELECT MRC
+	FROM product_orders
+	WHERE assets.OrderProductID = product_orders.OrderProductID
+); 
+
+
+---- Updating the Product of assets using updated product_orders
+
+UPDATE assets	
+SET Product = (
+	SELECT Product
+	FROM product_orders
+	WHERE assets.OrderProductID = product_orders.OrderProductID
+); 
+
+
+---- Updating the Product of assets using updated product_orders
+
+UPDATE assets	
+SET Status = (
+	SELECT Status
+	FROM product_orders
+	WHERE assets.OrderProductID = product_orders.OrderProductID
+); 
+
+--------- Re testing each discrepancies to confirm they were all removed
+
+---- Check of Total Amount to MRC for Orders to Product orders - 0
+
+SELECT COUNT(*) AS 'Number of discrepancies' 
+FROM orders
+JOIN product_orders
+ON orders.OrderId = product_orders.OrderId
+WHERE orders.TotalAmount IS NOT product_orders.MRC
+
+---- Check of Status for Orders to Product orders - 0
+
+SELECT COUNT(*) AS 'Number of discrepancies'
+FROM orders
+JOIN product_orders
+ON orders.OrderId = product_orders.OrderId
+WHERE orders.Status IS NOT product_orders.Status
+
+---- Check of Status for assets to Product orders - 0
+
+SELECT COUNT(*) AS 'Number of discrepancies'
+FROM assets
+JOIN product_orders
+ON assets.OrderProductID = product_orders.OrderProductID
+WHERE assets.Status IS NOT product_orders.Status
+
+---- Check of MRC for assets to Product orders - 0
+
+SELECT COUNT(*) AS 'Number of discrepancies'
+FROM assets
+JOIN product_orders
+ON assets.OrderProductID = product_orders.OrderProductID
+WHERE assets.MRC IS NOT product_orders.MRC
+
+---- Check of Product for assets to Product orders - 0
+
+SELECT COUNT(*) AS 'Number of discrepancies'
+FROM assets
+JOIN product_orders
+ON assets.OrderProductID = product_orders.OrderProductID
+WHERE assets.Product IS NOT product_orders.Product
+
+------- Reviewing full join of all tables to ensure all values are accurate. -----------------
+SELECT *
+FROM assets
+JOIN product_orders
+ON assets.OrderProductID = product_orders.OrderProductID
+JOIN orders
+ON product_orders.OrderId = orders.OrderId 
+
+Reconciliation Complete.
